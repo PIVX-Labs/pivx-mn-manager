@@ -1,9 +1,9 @@
+use crate::distro::select_distro_etc_release;
 use russh::client::{self, Handle};
+use russh::keys::PrivateKeyWithHashAlg;
 use russh::ChannelMsg;
 use std::path::PathBuf;
 use std::sync::Arc;
-//use std::net::{SocketAddr, ToSocketAddrs};
-use russh::keys::PrivateKeyWithHashAlg;
 use tokio::net::ToSocketAddrs;
 
 pub struct SshConnection<T: ToSocketAddrs> {
@@ -70,7 +70,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
     async fn execute_command(&mut self, command: &str) -> Result<String, russh::Error> {
         let handle = self.get_session_or_connect().await?;
         let mut channel = handle.channel_open_session().await?;
-        channel.exec(true, command);
+        channel.exec(true, command).await?;
         let mut response = String::new();
 
         loop {
@@ -97,8 +97,15 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         Ok(())
     }
 
-    pub async fn download_dependencies(&self) -> Result<(), russh::Error> {
-        todo!()
+    pub async fn download_dependencies(&mut self) -> Result<(), russh::Error> {
+        let distro = select_distro_etc_release(&self.execute_command("cat /etc/os-release").await?);
+        if let Some(distro) = distro {
+            self.execute_command(&distro.install_deps_command()).await?;
+
+            Ok(())
+        } else {
+            Err(russh::Error::UnsupportedAuthMethod)
+        }
     }
 
     pub async fn setup_pivxd_docker(&self) -> Result<(), russh::Error> {
