@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { invoke } from "@tauri-apps/api/core";
 import { ref, reactive } from "vue";
 
 const mns = ref([
@@ -11,7 +12,14 @@ const mns = ref([
   { name: "My VPS test", ipAddress: "127.0.0.1", status: "MISSING" },
 ]);
 
-const form = reactive({ name: "", ipAddress: "", status: "ENABLED" });
+const form = reactive({
+  name: "",
+  ipAddress: "",
+  authentication: "password",
+  username: "",
+  password: "",
+  privateKeyPath: "",
+});
 const showForm = ref(false);
 
 function badgeClass(status: string) {
@@ -34,11 +42,16 @@ function badgeLabel(status: string) {
 
 function addMn() {
   if (!form.name || !form.ipAddress) return;
-  mns.value.push({ ...form });
-  form.name = "";
-  form.ipAddress = "";
-  form.status = "ENABLED";
-  showForm.value = false;
+  if (form.authentication === "password") {
+    invoke(
+      "init_vps_with_password",
+      form.ipAddress,
+      form.username,
+      form.password,
+    );
+  } else if (form.authentication === "key") {
+    invoke("init_vps_with_key", form.ipAddress, form.username, form.password);
+  }
 }
 </script>
 
@@ -72,11 +85,32 @@ function addMn() {
           class="form-control form-control-sm"
           placeholder="IP address"
         />
-        <select v-model="form.status" class="form-select form-select-sm">
-          <option value="ENABLED">Enabled</option>
-          <option value="PRE_ENABLED">Pre-enabled</option>
-          <option value="MISSING">Missing</option>
+        <select
+          v-model="form.authentication"
+          class="form-select form-select-sm"
+          placeholder="Authentication"
+        >
+          <option value="password">Password</option>
+          <option value="key">Key authentication</option>
         </select>
+        <input
+          class="form-control form-control-sm"
+          v-model="form.username"
+          placeholder="Username"
+        />
+        <input
+          class="form-control form-control-sm"
+          v-model="form.password"
+          v-if="form.authentication === 'password'"
+          placeholder="Password"
+        />
+        <input
+          class="form-control form-control-sm"
+          v-on:change="(file: string) => (form.privateKeyPath = file)"
+          v-if="form.authentication === 'key'"
+          placeholder="Private key file"
+          type="file"
+        />
         <div class="d-flex gap-2">
           <button class="btn btn-primary btn-sm" @click="addMn">Add</button>
           <button

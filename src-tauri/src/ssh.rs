@@ -31,7 +31,11 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         }
     }
 
-    pub fn from_private_key(username: String, private_key_path: PathBuf) -> Self {
+    pub fn from_private_key(
+        username: String,
+        private_key_path: PathBuf,
+        address: T,
+    ) -> SshConnection<T> {
         todo!()
     }
 
@@ -54,12 +58,14 @@ impl<T: ToSocketAddrs> SshConnection<T> {
                     )
                     .await?;
                 if !auth_res.success() {
-                    return Err(russh::Error::NotAuthenticated);
+                    return Err(russh::Error::NotAuthenticated)
+                        .with_context(|| "Authentication with private key failed");
                 }
             } else if let Some(password) = &self.password {
                 session
                     .authenticate_password(&self.username, password)
-                    .await?;
+                    .await
+                    .with_context(|| "Authentication with password failed")?;
             }
             self.session = Some(session);
         }
@@ -104,7 +110,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
 
             Ok(())
         } else {
-            Err(russh::Error::UnsupportedAuthMethod)
+            Err(russh::Error::UnsupportedAuthMethod.into())
         }
     }
 
