@@ -1,4 +1,5 @@
 use crate::distro::select_distro_etc_release;
+use anyhow::{Context, Result};
 use russh::client::{self, Handle};
 use russh::keys::PrivateKeyWithHashAlg;
 use russh::ChannelMsg;
@@ -39,7 +40,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         todo!()
     }
 
-    async fn get_session_or_connect(&mut self) -> Result<&mut Handle<Client>, russh::Error> {
+    async fn get_session_or_connect(&mut self) -> Result<&mut Handle<Client>> {
         if self.session.is_none() {
             let config = Arc::new(client::Config {
                 ..Default::default()
@@ -73,7 +74,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         Ok(self.session.as_mut().unwrap())
     }
 
-    async fn execute_command(&mut self, command: &str) -> Result<String, russh::Error> {
+    async fn execute_command(&mut self, command: &str) -> Result<String> {
         let handle = self.get_session_or_connect().await?;
         let mut channel = handle.channel_open_session().await?;
         channel.exec(true, command).await?;
@@ -93,17 +94,17 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         Ok(response)
     }
 
-    pub async fn requires_sudo_password(&self) -> Result<bool, russh::Error> {
+    pub async fn requires_sudo_password(&self) -> Result<bool> {
         todo!()
     }
 
-    pub async fn set_sudo_passowrd(&mut self, sudo_password: String) -> Result<(), russh::Error> {
+    pub async fn set_sudo_passowrd(&mut self, sudo_password: String) -> Result<()> {
         self.sudo_password = Some(sudo_password);
         // TODO: check that it's correct
         Ok(())
     }
 
-    pub async fn download_dependencies(&mut self) -> Result<(), russh::Error> {
+    pub async fn download_dependencies(&mut self) -> Result<()> {
         let distro = select_distro_etc_release(&self.execute_command("cat /etc/os-release").await?);
         if let Some(distro) = distro {
             self.execute_command(&distro.install_deps_command()).await?;
@@ -114,7 +115,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         }
     }
 
-    pub async fn setup_pivxd_docker(&self) -> Result<(), russh::Error> {
+    pub async fn setup_pivxd_docker(&self) -> Result<()> {
         todo!()
     }
 }

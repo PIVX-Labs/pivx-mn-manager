@@ -43,14 +43,17 @@ function badgeLabel(status: string) {
 function addMn() {
   if (!form.name || !form.ipAddress) return;
   if (form.authentication === "password") {
-    invoke(
-      "init_vps_with_password",
-      form.ipAddress,
-      form.username,
-      form.password,
-    );
+    invoke("init_vps_with_password", {
+      ip_address: form.ipAddress,
+      username: form.username,
+      password: form.password,
+    });
   } else if (form.authentication === "key") {
-    invoke("init_vps_with_key", form.ipAddress, form.username, form.password);
+    invoke("init_vps_with_key", {
+      ip_address: form.ipAddress,
+      username: form.username,
+      password: form.password,
+    });
   }
 }
 </script>
@@ -106,7 +109,11 @@ function addMn() {
         />
         <input
           class="form-control form-control-sm"
-          v-on:change="(file: string) => (form.privateKeyPath = file)"
+          v-on:change="
+            (event: Event) =>
+              (form.privateKeyPath =
+                (event.target as HTMLInputElement).files?.[0]?.name ?? '')
+          "
           v-if="form.authentication === 'key'"
           placeholder="Private key file"
           type="file"
