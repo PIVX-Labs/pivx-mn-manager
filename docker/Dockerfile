@@ -1,6 +1,9 @@
 # Install pivxd and get it ready to host a masternode
-
+ARG MN_IP
+ARG MN_PRIV_KEY
 FROM debian:bookworm-slim
+RUN test -n "MN_IP" || { echo "MN_IP is required"; exit 1; }
+RUN test -n "MN_PRIV_KEY" || { echo "MN_PRIV_KEY is required"; exit 1; }
 WORKDIR /app
 RUN apt-get update && apt-get install -y \
     wget \
@@ -15,4 +18,7 @@ RUN ./install-params.sh
 RUN wget "https://snapshot.rockdev.org/PIVXsnapshotLatest.zip"
 WORKDIR /root/.pivx/
 RUN tar xf PIVXsnapshotLatest.tgz
+COPY pivx.template.conf .
+RUN sed -i 's+$IP+'"$MN_IP"'+g' pivx.template.conf
+RUN sed -i 's+$PRIV_KEY+'"$MN_PRIV_KEY"'+g' pivx.template.conf 
 CMD ["/app/pivx-5.6.1/bin/pivxd"]
