@@ -1,23 +1,15 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
-import { ref, reactive } from "vue";
+import { ref, reactive, Ref } from "vue";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
+import { VPS } from "./types/vps";
 
-const mns = ref([
-  {
-    name: "VPS-1",
-    ipAddress: "8526:efcf:c8ca:8cb4:82bf:ab6d:5504:9299",
-    status: "ENABLED",
-  },
-  { name: "VPS-2", ipAddress: "123.234.456.124:1234", status: "PRE_ENABLED" },
-  { name: "My VPS test", ipAddress: "127.0.0.1", status: "MISSING" },
-]);
+const vps: Ref<VPS[]> = ref([]);
 
 const form = reactive({
   name: "",
   ipAddress: "",
-  authentication: "password",
+  authentication: "password" as "password" | "key",
   username: "",
   password: "",
   privateKeyPath: "",
@@ -52,32 +44,24 @@ async function saveMns() {
       filters: [{ name: "JSON", extensions: ["json"] }],
     });
     if (!path) return; // user cancelled
-    await writeTextFile(path, JSON.stringify(mns.value, null, 2));
+    await writeTextFile(path, JSON.stringify(vps.value, null, 2));
   } catch (e) {
     saveError.value = String(e);
   }
 }
 
-function addMn() {
+async function addVPN() {
   if (!form.name || !form.ipAddress) return;
-  if (form.authentication === "password") {
-    invoke("init_vps_with_password", {
-      ip_address: form.ipAddress,
-      username: form.username,
-      password: form.password,
-    });
-  } else if (form.authentication === "key") {
-    invoke("init_vps_with_key", {
-      ip_address: form.ipAddress,
-      username: form.username,
-      private_key_path: form.privateKeyPath,
-    });
-  }
-  mns.value.push({
-    name: form.name,
-    ipAddress: form.ipAddress,
-    status: "PRE_ENABLED",
-  });
+  const server = new VPS(
+    form.name,
+    form.authentication,
+    form.username,
+    form.password || form.privateKeyPath,
+    form.ipAddress,
+    [],
+  );
+  await server.setupVps();
+  vps.value.push(server);
   showForm.value = false;
 }
 </script>
@@ -86,16 +70,16 @@ function addMn() {
   <div class="container py-3">
     <div class="list-group mb-3">
       <div
-        v-for="mn in mns"
-        :key="mn.ipAddress"
+        v-for="s in vps"
+        :key="s.ipAddress"
         class="list-group-item d-flex align-items-center gap-3"
       >
         <div class="flex-grow-1">
-          <div class="fw-semibold">{{ mn.name }}</div>
-          <code class="text-muted small">{{ mn.ipAddress }}</code>
+          <div class="fw-semibold">{{ s.name }}</div>
+          <code class="text-muted small">{{ s.ipAddress }}</code>
         </div>
-        <span :class="['badge', badgeClass(mn.status)]">{{
-          badgeLabel(mn.status)
+        <span :class="['badge', badgeClass('ENABLED')]">{{
+          badgeLabel("ENABLED")
         }}</span>
       </div>
     </div>
@@ -147,7 +131,7 @@ function addMn() {
           "
         />
         <div class="d-flex gap-2">
-          <button class="btn btn-primary btn-sm" @click="addMn">Add</button>
+          <button class="btn btn-primary btn-sm" @click="addVPN">Add</button>
           <button
             class="btn btn-outline-secondary btn-sm"
             @click="showForm = false"
@@ -169,7 +153,7 @@ function addMn() {
       <button
         class="btn btn-outline-primary btn-sm"
         @click="saveMns"
-        :disabled="mns.length === 0"
+        :disabled="vps.length === 0"
       >
         Save to file
       </button>
