@@ -38,13 +38,13 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         address: T,
     ) -> SshConnection<T> {
         Self {
-	    username,
-	    password: None,
-	    sudo_password: None,
-	    private_key_path: Some(private_key_path),
-	    address,
-	    session: None,
-	}
+            username,
+            password: None,
+            sudo_password: None,
+            private_key_path: Some(private_key_path),
+            address,
+            session: None,
+        }
     }
 
     async fn get_session_or_connect(&mut self) -> Result<&mut Handle<Client>> {
@@ -84,7 +84,10 @@ impl<T: ToSocketAddrs> SshConnection<T> {
     async fn execute_command(&mut self, command: &str) -> Result<String> {
         let handle = self.get_session_or_connect().await?;
         let mut channel = handle.channel_open_session().await?;
-        channel.exec(true, command).await.with_context(|| format!("Failed to execute command {}", command))?;
+        channel
+            .exec(true, command)
+            .await
+            .with_context(|| format!("Failed to execute command {}", command))?;
         let mut response = String::new();
 
         loop {
@@ -102,12 +105,12 @@ impl<T: ToSocketAddrs> SshConnection<T> {
     }
 
     pub async fn requires_sudo_password(&mut self) -> Result<bool> {
-	let result = self.execute_command("sudo echo hello").await?;
-	if let Some(password) = self.password.take() {
-	    self.execute_command(&password).await?;
-	    self.password = Some(password);
-	}
-	Ok(result.trim() == "hello")
+        let result = self.execute_command("sudo echo hello").await?;
+        if let Some(password) = self.password.take() {
+            self.execute_command(&password).await?;
+            self.password = Some(password);
+        }
+        Ok(result.trim() == "hello")
     }
 
     pub async fn set_sudo_passowrd(&mut self, sudo_password: String) -> Result<bool> {
@@ -128,24 +131,39 @@ impl<T: ToSocketAddrs> SshConnection<T> {
 
     pub async fn setup_pivxd_docker(&mut self) -> Result<()> {
         let docker_file = include_str!("../../docker/Dockerfile");
-	self.execute_command("cd && mkdir .pivx-mn-manager && cd .pivx-mn-manager").await.context("Failed to create .pivx-mn-manager directory")?;
-	self.execute_command(&format!("echo '{}' > Dockerfile", escape_string(docker_file))).await.context("Failed to create Dockerfile")?;
-	self.execute_command("docker buildx build -t pivx-masternode -f Dockerfile").await.context("Failed to build Dockerfile")?;
-	self.execute_command("docker run -d --restart unless-stopped --name pivx-masternode pivx-masternode").await.context("Failed to run docker")?;
-	Ok(())
+        self.execute_command("cd && mkdir .pivx-mn-manager && cd .pivx-mn-manager")
+            .await
+            .context("Failed to create .pivx-mn-manager directory")?;
+        self.execute_command(&format!(
+            "echo '{}' > Dockerfile",
+            escape_string(docker_file)
+        ))
+        .await
+        .context("Failed to create Dockerfile")?;
+        self.execute_command("docker buildx build -t pivx-masternode -f Dockerfile")
+            .await
+            .context("Failed to build Dockerfile")?;
+        self.execute_command(
+            "docker run -d --restart unless-stopped --name pivx-masternode pivx-masternode",
+        )
+        .await
+        .context("Failed to run docker")?;
+        Ok(())
     }
 }
 
 fn escape_string(string: &str) -> String {
-    string.chars().fold(String::with_capacity(string.len()), |mut acc, c| {
-	match c {
-            '\\' => acc.push_str("\\\\"),
-            '\'' => acc.push_str("'\''"),
-	    '\n' => acc.push_str("\\n"),
-            _ => acc.push(c),
-	}
-	acc
-    })
+    string
+        .chars()
+        .fold(String::with_capacity(string.len()), |mut acc, c| {
+            match c {
+                '\\' => acc.push_str("\\\\"),
+                '\'' => acc.push_str("'\''"),
+                '\n' => acc.push_str("\\n"),
+                _ => acc.push(c),
+            }
+            acc
+        })
 }
 
 struct Client {}
