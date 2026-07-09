@@ -36,4 +36,12 @@ export class VPS {
     }
     this.isInitialized = true;
   }
+
+  getMasternodes() {
+    return this.masternodes;
+  }
+
+  addMasternode(masternode: Masternode) {
+    this.masternodes.push(masternode);
+  }
 }
