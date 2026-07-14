@@ -8,8 +8,10 @@ import {
   MasternodeStatuses,
   getMasternodeStatus,
 } from "./types/masternode";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 const vps: Ref<VPS[]> = ref([]);
+const BASE_MPW_URL = "https://app.mypivxwallet.org";
 
 const form = reactive({
   name: "",
@@ -159,6 +161,10 @@ async function addVPN() {
   form.password = "";
   form.privateKeyPath = "";
 }
+
+async function openMpwTx() {
+  await openUrl(`${BASE_MPW_URL}?pay=true&payYourself=true&amount=10000`);
+}
 </script>
 
 <template>
@@ -236,11 +242,14 @@ async function addVPN() {
             class="form-control form-control-sm"
             placeholder="Masternode IP address"
           />
-          <input
-            v-model="mnForms[s.ipAddress].collateralTxId"
-            class="form-control form-control-sm"
-            placeholder="Collateral transaction ID"
-          />
+          <div class="d-flex">
+            <input
+              v-model="mnForms[s.ipAddress].collateralTxId"
+              class="form-control form-control-sm"
+              placeholder="Collateral transaction ID"
+            />
+            <button @click="openMpwTx()">MPW</button>
+          </div>
           <input
             class="form-control form-control-sm"
             type="file"
