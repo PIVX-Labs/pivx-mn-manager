@@ -12,11 +12,15 @@
     "prettier": "prettier --write --cache ."
   },
   "dependencies": {
+    "@noble/hashes": "^2.2.0",
+    "@noble/secp256k1": "^3.1.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2",
     "bootstrap": "^5.3.8",
+    "bs58": "^6.0.0",
+    "buffer": "^6.0.3",
     "vue": "^3.5.35"
   },
   "devDependencies": {
