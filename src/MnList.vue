@@ -29,6 +29,7 @@ const mnForms = reactive<
       ipAddress: string;
       privateKeyPath: string;
       collateralTxId: string;
+      outId: number;
     }
   >
 >({});
@@ -91,6 +92,7 @@ function ensureMnForm(s: VPS) {
       ipAddress: "",
       privateKeyPath: "",
       collateralTxId: "",
+      outId: 0,
     };
   }
   return mnForms[s.ipAddress];
@@ -109,6 +111,7 @@ async function addMasternode(s: VPS) {
     ipAddress: f.ipAddress,
     privateKey: f.privateKeyPath,
     collateralTxId: f.collateralTxId,
+    outId: f.outId,
   };
   s.addMasternode(mn);
   f.name = "";
@@ -240,6 +243,12 @@ async function addVPN() {
             v-model="mnForms[s.ipAddress].collateralTxId"
             class="form-control form-control-sm"
             placeholder="Collateral transaction ID"
+          />
+          <input
+            v-model="mnForms[s.ipAddress].collateralTxId"
+            class="form-control form-control-sm"
+            placeholder="Out id"
+            type="number"
           />
           <input
             class="form-control form-control-sm"
