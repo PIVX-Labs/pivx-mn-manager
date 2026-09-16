@@ -136,7 +136,8 @@ impl<T: ToSocketAddrs> SshConnection<T> {
     }
 
     pub async fn download_dependencies(&mut self) -> Result<()> {
-        let distro = select_distro_etc_release(&self.execute_command("cat /etc/os-release").await?.stdout);
+        let distro =
+            select_distro_etc_release(&self.execute_command("cat /etc/os-release").await?.stdout);
         if let Some(distro) = distro {
             self.execute_command(&distro.install_deps_command()).await?;
 
@@ -152,8 +153,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
             .await
             .context("Failed to create .pivx-mn-manager directory")?;
         self.execute_command(&format!(
-            "echo '{}' > Dockerfile",
-            escape_string(docker_file)
+            "cat > Dockerfile <<'PIVX_EOF'\n{docker_file}\nPIVX_EOF"
         ))
         .await
         .context("Failed to create Dockerfile")?;
