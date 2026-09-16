@@ -16,6 +16,12 @@ pub struct SshConnection<T: ToSocketAddrs> {
     session: Option<Handle<Client>>,
 }
 
+#[derive(Debug, Clone)]
+pub struct CommandOutput {
+    pub stdout: String,
+    pub stderr: String,
+}
+
 impl<T: ToSocketAddrs> SshConnection<T> {
     pub fn from_username_password(
         username: String,
@@ -81,36 +87,47 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         Ok(self.session.as_mut().unwrap())
     }
 
-    async fn execute_command(&mut self, command: &str) -> Result<String> {
+    async fn execute_command(&mut self, command: &str) -> Result<CommandOutput> {
         let handle = self.get_session_or_connect().await?;
         let mut channel = handle.channel_open_session().await?;
         channel
             .exec(true, command)
             .await
-            .with_context(|| format!("Failed to execute command {}", command))?;
-        let mut response = String::new();
+            .with_context(|| format!("Failed to execute command {command}"))?;
 
-        loop {
-            let Some(msg) = channel.wait().await else {
-                break;
-            };
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let mut exit_status = None;
+
+        while let Some(msg) = channel.wait().await {
             match msg {
-                ChannelMsg::Data { ref data } => {
-                    response.push_str(str::from_utf8(data).unwrap_or(""));
-                }
+                ChannelMsg::Data { ref data } => stdout.extend_from_slice(data),
+                ChannelMsg::ExtendedData { ref data, .. } => stderr.extend_from_slice(data),
+                ChannelMsg::ExitStatus { exit_status: s } => exit_status = Some(s),
                 _ => {}
             }
         }
-        Ok(response)
-    }
 
+        let stdout = String::from_utf8_lossy(&stdout).into_owned();
+        let stderr = String::from_utf8_lossy(&stderr).into_owned();
+
+        match exit_status {
+            Some(0) => Ok(CommandOutput { stdout, stderr }),
+            Some(code) => Err(anyhow::anyhow!(
+                "command `{command}` exited with {code}: {stderr}"
+            )),
+            None => Err(anyhow::anyhow!(
+                "command `{command}` did not report an exit status"
+            )),
+        }
+    }
     pub async fn requires_sudo_password(&mut self) -> Result<bool> {
         let result = self.execute_command("sudo echo hello").await?;
         if let Some(password) = self.password.take() {
             self.execute_command(&password).await?;
             self.password = Some(password);
         }
-        Ok(result.trim() == "hello")
+        Ok(result.stdout.trim() == "hello")
     }
 
     pub async fn set_sudo_passowrd(&mut self, sudo_password: String) -> Result<bool> {
@@ -119,7 +136,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
     }
 
     pub async fn download_dependencies(&mut self) -> Result<()> {
-        let distro = select_distro_etc_release(&self.execute_command("cat /etc/os-release").await?);
+        let distro = select_distro_etc_release(&self.execute_command("cat /etc/os-release").await?.stdout);
         if let Some(distro) = distro {
             self.execute_command(&distro.install_deps_command()).await?;
 
