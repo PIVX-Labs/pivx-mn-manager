@@ -44,4 +44,12 @@ export class VPS {
   addMasternode(masternode: Masternode) {
     this.masternodes.push(masternode);
   }
+  removeMasternode(masternode: Masternode) {
+    const i = this.masternodes.findIndex(
+      (m) => m.ipAddress === masternode.ipAddress,
+    );
+    if (i < 0) return false;
+    this.masternodes.splice(i, 1);
+    return true;
+  }
 }
