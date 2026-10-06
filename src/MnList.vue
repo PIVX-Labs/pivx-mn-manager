@@ -168,7 +168,7 @@ function removeMasternode(s: VPS, mn: Masternode) {
   ) {
     return;
   }
-  s.removeMasternode(mn.ipAddress);
+  s.removeMasternode(mn);
   delete statuses[statusKey(s, mn)];
 }
 
