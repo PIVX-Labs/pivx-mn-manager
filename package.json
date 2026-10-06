@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "echo TODO",
-    "prettier": "prettier --write --cache ."
+    "prettier": "prettier --write --cache .",
+    "ssh": "./ssh-sandbox.bash && ./ssh-sandbox.bash ssh"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",
