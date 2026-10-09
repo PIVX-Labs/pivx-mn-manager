@@ -5,6 +5,9 @@ mod commands;
 mod distro;
 mod ssh;
 
+#[cfg(test)]
+mod tests;
+
 fn main() {
     pivx_mn_manager_lib::run()
 }
