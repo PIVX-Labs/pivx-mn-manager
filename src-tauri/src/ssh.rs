@@ -13,7 +13,7 @@ pub struct SshConnection<T: ToSocketAddrs> {
     password: Option<String>,
     private_key_path: Option<PathBuf>,
     address: T,
-    session: Option<Handle<Client>>,
+    pub session: Option<Handle<Client>>,
 }
 
 #[derive(Debug, Clone)]
@@ -87,7 +87,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
         Ok(self.session.as_mut().unwrap())
     }
 
-    async fn execute_command(&mut self, command: &str) -> Result<CommandOutput> {
+    pub async fn execute_command(&mut self, command: &str) -> Result<CommandOutput> {
         let handle = self.get_session_or_connect().await?;
         let mut channel = handle.channel_open_session().await?;
         channel
@@ -169,7 +169,7 @@ impl<T: ToSocketAddrs> SshConnection<T> {
     }
 }
 
-fn escape_string(string: &str) -> String {
+pub fn escape_string(string: &str) -> String {
     string
         .chars()
         .fold(String::with_capacity(string.len()), |mut acc, c| {
