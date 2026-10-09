@@ -9,25 +9,12 @@ defineEmits<{ enter: [] }>();
 
     <div class="landing-inner">
       <div class="shield" aria-hidden="true">
-        <svg viewBox="0 0 96 96" width="84" height="84" role="img">
-          <defs>
-            <linearGradient id="shieldGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#a06ee1" />
-              <stop offset="1" stop-color="#5e4778" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M48 6l34 13v27c0 21-14.5 35.5-34 42.5C28.5 81.5 14 67 14 46V19L48 6z"
-            fill="url(#shieldGrad)"
-          />
-          <circle cx="48" cy="40" r="9.5" fill="#17122b" />
-          <path d="M44.6 47h6.8l2 15H42.6l2-15z" fill="#17122b" />
-          <path
-            d="M48 30.5a9.5 9.5 0 019.5 9.5h-4a5.5 5.5 0 00-11 0h-4A9.5 9.5 0 0148 30.5z"
-            fill="#d9c7f2"
-            opacity="0.85"
-          />
-        </svg>
+        <img
+          src="/pivx-logo.svg"
+          alt="PIVX logo"
+          width="320"
+          height="108"
+        />
       </div>
 
       <span class="eyebrow">PIVX Labs</span>
@@ -126,6 +113,7 @@ defineEmits<{ enter: [] }>();
 
 .landing-inner {
   position: relative;
+  width: min(100%, 880px);
   max-width: 880px;
   text-align: center;
   display: flex;
