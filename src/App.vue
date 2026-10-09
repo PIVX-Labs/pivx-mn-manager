@@ -1,9 +1,14 @@
 <script setup lang="ts">
+import { ref } from "vue";
+import Landing from "./Landing.vue";
 import MnList from "./MnList.vue";
+
+const entered = ref(false);
 </script>
 
 <template>
-  <main class="container">
+  <Landing v-if="!entered" @enter="entered = true" />
+  <main v-else class="container">
     <MnList />
   </main>
 </template>
